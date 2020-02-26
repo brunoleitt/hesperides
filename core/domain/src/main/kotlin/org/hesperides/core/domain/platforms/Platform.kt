@@ -20,7 +20,7 @@ data class RestoreDeletedPlatformCommand(@TargetAggregateIdentifier val platform
 // Event
 
 open class PlatformEvent(@Transient open val platformId: String, @Transient override val user: String) : UserEvent(user)
-open class PlatformEventWithKey(@Transient open val platformKey: Platform.Key, @Transient override val platformId: String, @Transient override val user: String) : PlatformEvent(platformId, user)
+open class PlatformEventWithKey(open val platformKey: Platform.Key, @Transient override val platformId: String, @Transient override val user: String) : PlatformEvent(platformId, user)
 
 data class PlatformCreatedEvent(override val platformId: String, val platform: Platform, override val user: String) : PlatformEventWithKey(platform.key, platformId, user)
 data class PlatformUpdatedEvent(override val platformId: String, val platform: Platform, val copyPropertiesForUpgradedModules: Boolean, override val user: String) : PlatformEventWithKey(platform.key, platformId, user)

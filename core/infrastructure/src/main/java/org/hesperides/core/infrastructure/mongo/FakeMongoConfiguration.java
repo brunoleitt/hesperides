@@ -7,6 +7,9 @@ import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.mongo.DefaultMongoTemplate;
 import org.axonframework.mongo.eventsourcing.eventstore.MongoEventStorageEngine;
+import org.axonframework.mongo.eventsourcing.eventstore.documentperevent.DocumentPerEventStorageStrategy;
+import org.axonframework.serialization.Serializer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -38,8 +41,8 @@ public class FakeMongoConfiguration {
     }
 
     @Bean
-    public EventStorageEngine eventStorageEngine(MongoClient mongoClient) {
+    public EventStorageEngine eventStorageEngine(MongoClient mongoClient, @Qualifier("eventSerializer") Serializer eventSerializer) {
         DefaultMongoTemplate axonMongoTemplate = new DefaultMongoTemplate(mongoClient, MONGO_DB_NAME);
-        return new MongoEventStorageEngine(axonMongoTemplate);
+        return new MongoEventStorageEngine(eventSerializer, null, axonMongoTemplate, new DocumentPerEventStorageStrategy());
     }
 }
