@@ -5,10 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.axonframework.eventhandling.AnnotationEventListenerAdapter;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.eventsourcing.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.GenericTrackedDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.queryhandling.QueryHandler;
@@ -21,10 +20,13 @@ import org.hesperides.core.domain.platforms.exceptions.InexistantPlatformAtTimeE
 import org.hesperides.core.domain.platforms.exceptions.UnreplayablePlatformEventsException;
 import org.hesperides.core.domain.platforms.queries.views.*;
 import org.hesperides.core.domain.platforms.queries.views.properties.ValuedPropertyView;
+import org.hesperides.core.domain.security.UserEvent;
 import org.hesperides.core.domain.templatecontainers.entities.TemplateContainer;
 import org.hesperides.core.infrastructure.MinimalPlatformRepository;
 import org.hesperides.core.infrastructure.inmemory.platforms.InmemoryPlatformRepository;
 import org.hesperides.core.infrastructure.mongo.MongoConfiguration;
+import org.hesperides.core.infrastructure.mongo.events.EventDocument;
+import org.hesperides.core.infrastructure.mongo.events.MongoEventRepository;
 import org.hesperides.core.infrastructure.mongo.modules.ModuleDocument;
 import org.hesperides.core.infrastructure.mongo.modules.MongoModuleRepository;
 import org.hesperides.core.infrastructure.mongo.platforms.documents.*;
@@ -59,6 +61,7 @@ public class MongoPlatformProjectionRepository implements PlatformProjectionRepo
     private final MongoPlatformRepository platformRepository;
     private final MongoModuleRepository moduleRepository;
     private final EventStorageEngine eventStorageEngine;
+    private final MongoEventRepository mongoEventRepository;
     private final MongoTemplate mongoTemplate;
     private final SpringProfiles springProfiles;
 
@@ -68,12 +71,13 @@ public class MongoPlatformProjectionRepository implements PlatformProjectionRepo
     public MongoPlatformProjectionRepository(MongoPlatformRepository platformRepository,
                                              MongoModuleRepository moduleRepository,
                                              EventStorageEngine eventStorageEngine,
-                                             MongoTemplate mongoTemplate,
+                                             MongoEventRepository mongoEventRepository, MongoTemplate mongoTemplate,
                                              SpringProfiles springProfiles) {
         this.minimalPlatformRepository = platformRepository;
         this.platformRepository = platformRepository;
         this.moduleRepository = moduleRepository;
         this.eventStorageEngine = eventStorageEngine;
+        this.mongoEventRepository = mongoEventRepository;
         this.mongoTemplate = mongoTemplate;
         this.springProfiles = springProfiles;
     }
@@ -83,6 +87,7 @@ public class MongoPlatformProjectionRepository implements PlatformProjectionRepo
         this.platformRepository = null;
         this.moduleRepository = null;
         this.eventStorageEngine = null;
+        this.mongoEventRepository = null;
         this.mongoTemplate = null;
         this.springProfiles = null;
     }
@@ -435,25 +440,31 @@ public class MongoPlatformProjectionRepository implements PlatformProjectionRepo
     }
 
     private PlatformDocument getPlatformAtPointInTime(String platformId, Long timestamp) {
-        DomainEventStream eventStream = eventStorageEngine.readEvents(platformId).filter(domainEventMessage ->
-                (timestamp == null || domainEventMessage.getTimestamp().toEpochMilli() <= timestamp)
-                        && !domainEventMessage.getPayloadType().equals(RestoreDeletedPlatformEvent.class)
-        );
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        Integer sequenceNumber = mongoEventRepository.findAllSequenceNumberAndTimestampsByAggregateIdentifier(platformId)
+                .stream()
+                .filter(eventDocument -> Instant.parse(eventDocument.getTimestamp()).isBefore(instant))
+                .findFirst()
+                .map(EventDocument::getSequenceNumber)
+                .orElseThrow(() -> new InexistantPlatformAtTimeException(timestamp));
+
         InmemoryPlatformRepository inmemoryPlatformRepository = new InmemoryPlatformRepository();
-        AnnotationEventListenerAdapter eventHandlerAdapter = new AnnotationEventListenerAdapter(new MongoPlatformProjectionRepository(inmemoryPlatformRepository));
-        boolean zeroEventsBeforeTimestamp = true;
-        while (eventStream.hasNext()) {
-            zeroEventsBeforeTimestamp = false;
+        MongoPlatformProjectionRepository platformProjectionRepository = new MongoPlatformProjectionRepository(inmemoryPlatformRepository);
+        AnnotationEventListenerAdapter eventHandlerAdapter = new AnnotationEventListenerAdapter(platformProjectionRepository);
+
+        List<EventDocument> events = mongoEventRepository.findAllByAggregateIdentifierAndSequenceNumberLessThanEqual(platformId, sequenceNumber);
+        events.forEach(event -> {
+            GenericDomainEventMessage<UserEvent> eventMessage = new GenericDomainEventMessage(
+                    event.getType(),
+                    event.getAggregateIdentifier(),
+                    event.getSequenceNumber(),
+                    event.serializedPayloadToUserEvent());
             try {
-                EventMessage<?> event = eventStream.next();
-                eventHandlerAdapter.handle(event);
+                eventHandlerAdapter.handle(eventMessage);
             } catch (Exception error) {
                 throw new UnreplayablePlatformEventsException(timestamp, error);
             }
-        }
-        if (zeroEventsBeforeTimestamp) {
-            throw new InexistantPlatformAtTimeException(timestamp);
-        }
+        });
         return inmemoryPlatformRepository.getCurrentPlatformDocument();
     }
 }

@@ -26,6 +26,14 @@ public class EventDocument {
     private String eventIdentifier;
 
     public EventView toEventView() {
+        return new EventView(
+                payloadType,
+                serializedPayloadToUserEvent(),
+                Instant.parse(timestamp)
+        );
+    }
+
+    public UserEvent serializedPayloadToUserEvent() {
         XStream xStream = new XStream();
         // Afin d'éviter le message "Security framework of XStream
         // not initialized, XStream is probably vulnerable"
@@ -34,10 +42,6 @@ public class EventDocument {
                 "org.hesperides.core.domain.**"
         });
 
-        return new EventView(
-                payloadType,
-                (UserEvent) xStream.fromXML(serializedPayload),
-                Instant.parse(timestamp)
-        );
+        return (UserEvent) xStream.fromXML(serializedPayload);
     }
 }
