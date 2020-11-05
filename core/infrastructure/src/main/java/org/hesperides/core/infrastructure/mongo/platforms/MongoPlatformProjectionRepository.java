@@ -20,7 +20,8 @@ import org.hesperides.core.domain.platforms.commands.PlatformAggregate;
 import org.hesperides.core.domain.platforms.exceptions.InexistantPlatformAtTimeException;
 import org.hesperides.core.domain.platforms.exceptions.UnreplayablePlatformEventsException;
 import org.hesperides.core.domain.platforms.queries.views.*;
-import org.hesperides.core.domain.platforms.queries.views.properties.PlatformProperties;
+import org.hesperides.core.domain.platforms.queries.views.properties.PlatformPropertiesView;
+import org.hesperides.core.domain.platforms.queries.views.properties.PropertySearchResultView;
 import org.hesperides.core.domain.platforms.queries.views.properties.ValuedPropertyView;
 import org.hesperides.core.domain.templatecontainers.entities.TemplateContainer;
 import org.hesperides.core.infrastructure.MinimalPlatformRepository;
@@ -440,9 +441,19 @@ public class MongoPlatformProjectionRepository implements PlatformProjectionRepo
     @QueryHandler
     @Override
     @Timed
-    public List<PlatformProperties> onFindAllApplicationsPropertiesQuery(FindAllApplicationsPropertiesQuery query) {
+    public List<PlatformPropertiesView> onFindAllApplicationsPropertiesQuery(FindAllApplicationsPropertiesQuery query) {
         return platformRepository.findAllApplicationsPropertiesQuery().stream()
-                .map(PlatformDocument::toApplicationProperties)
+                .map(PlatformDocument::toPlatformPropertiesView)
+                .collect(Collectors.toList());
+    }
+
+    @QueryHandler
+    @Override
+    @Timed
+    public List<PropertySearchResultView> onSearchPropertiesQuery(SearchPropertiesQuery query) {
+        return platformRepository.searchProperties(query.getPropertyName(), query.getPropertyValue(), query.getApplicationName()).stream()
+                .map(PlatformDocument::toPropertySearchResultViews)
+                .flatMap(List::stream)
                 .collect(Collectors.toList());
     }
 

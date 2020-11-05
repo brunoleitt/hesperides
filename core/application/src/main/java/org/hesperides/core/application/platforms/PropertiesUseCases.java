@@ -444,18 +444,18 @@ public class PropertiesUseCases {
         return timestamp != null ? platformUseCases.getPlatformAtPointInTime(platformKey, timestamp) : platformUseCases.getPlatform(platformKey);
     }
 
-    public List<PlatformProperties> findAllApplicationsPasswords(User user) {
+    public List<PlatformPropertiesView> findAllApplicationsPasswords(User user) {
         if (!user.isGlobalTech()) {
             throw new AccessDeniedException("You have to be a tech user to access this resource");
         }
 
-        List<PlatformProperties> applicationsProperties = platformQueries.findAllApplicationsProperties();
+        List<PlatformPropertiesView> applicationsProperties = platformQueries.findAllApplicationsProperties();
         List<ModulePasswordProperties> modulesPasswords = moduleQueries.findAllPasswordProperties();
         Map<Module.Key, List<String>> passwordsByModule = modulesPasswords.stream()
                 .collect(toMap(ModulePasswordProperties::getModuleKey, ModulePasswordProperties::getPasswords));
 
         return applicationsProperties.stream()
-                .map(applicationProperties -> new PlatformProperties(
+                .map(applicationProperties -> new PlatformPropertiesView(
                         applicationProperties.getApplicationName(),
                         applicationProperties.getPlatformName(),
                         applicationProperties.isProductionPlatform(),
@@ -463,7 +463,7 @@ public class PropertiesUseCases {
                                 .map(deployedModule -> {
                                     Module.Key moduleKey = Module.Key.fromPropertiesPath(deployedModule.getPropertiesPath());
                                     List<String> modulePasswords = passwordsByModule.getOrDefault(moduleKey, emptyList());
-                                    return new PlatformProperties.DeployedModule(
+                                    return new PlatformPropertiesView.DeployedModule(
                                             deployedModule.getPropertiesPath(),
                                             deployedModule.isArchivedModule(),
                                             deployedModule.getProperties().stream()
@@ -475,5 +475,22 @@ public class PropertiesUseCases {
                 )
                 .filter(applicationProperties -> !applicationProperties.getDeployedModules().isEmpty())
                 .collect(toList());
+    }
+
+    public List<PropertySearchResultView> searchProperties(String propertyName,
+                                                           String propertyValue,
+                                                           String applicationName,
+                                                           User user) {
+        // Récupérer les propriétés
+        // Si l'utilisateur n'est pas prod, récupérer le modèle et filtrer les propriétés de type mot de passe
+
+        List<PropertySearchResultView> properties = platformQueries.searchProperties(
+                propertyName, propertyValue, applicationName);
+
+//        if (!user.isGlobalProd()) {
+//            List<ModulePasswordProperties> passwords = moduleQueries.findAllPasswordProperties();
+//        }
+
+        return properties;
     }
 }
