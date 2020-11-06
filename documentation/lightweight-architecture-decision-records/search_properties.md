@@ -1,6 +1,6 @@
 # Recherche de propriétés
 
-Recherche de propriétés par nom et/ou valeur sur l'ensemble des applications ou sur une application spécifique.
+Recherche de propriétés par nom et/ou valeur sur l'ensemble des applications.
 
 ## Règles spécifiques
 
@@ -9,7 +9,7 @@ Recherche de propriétés par nom et/ou valeur sur l'ensemble des applications o
 
 ## Nouveau endpoint
 
-    /applications/search_properties?property_name={property_name}&property_value={property_value}&application_name={application_name}
+    /applications/search_properties?property_name={property_name}&property_value={property_value}
     
 ## Output
 

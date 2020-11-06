@@ -62,6 +62,16 @@ public interface MongoPlatformRepository extends MongoRepository<PlatformDocumen
     @Query(value = "{ }", fields = "{ 'key': 1, 'isProductionPlatform': 1, 'deployedModules.id' : 1, 'deployedModules.propertiesPath' : 1, 'deployedModules.valuedProperties' : 1 }")
     List<PlatformDocument> findAllApplicationsPropertiesQuery();
 
-    @Query(value = "{ 'deployedModules.valuedProperties.name': { '$regex' : ?0, '$options' : 'i' }, 'deployedModules.valuedProperties.value': { '$regex' : ?1, '$options' : 'i' } }")
-    List<PlatformDocument> searchProperties(String propertyName, String propertyValue, String applicationName);
+    @Query(
+            value = "{ " +
+                    "'deployedModules.valuedProperties': { $elemMatch: { 'name': { '$regex' : ?0, '$options' : 'i' }, 'value': { '$regex': ?1, '$options': 'i' } } } " +
+                    "}",
+            fields = "{ " +
+                    "'key': 1, " +
+                    "'deployedModules.propertiesPath': 1, " +
+                    "'deployedModules.valuedProperties._class': 1, " +
+                    "'deployedModules.valuedProperties': { $elemMatch: { 'name': { '$regex': ?0, '$options': 'i' }, 'value': { '$regex': ?1, '$options': 'i' } } } " +
+                    "}"
+    )
+    List<PlatformDocument> searchProperties(String propertyName, String propertyValue);
 }

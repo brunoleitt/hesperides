@@ -26,6 +26,7 @@ import org.hesperides.core.presentation.io.platforms.*;
 import org.hesperides.core.presentation.io.platforms.properties.GlobalPropertyUsageOutput;
 import org.hesperides.core.presentation.io.platforms.properties.PlatformDetailedPropertiesOutput;
 import org.hesperides.core.presentation.io.platforms.properties.PropertiesIO;
+import org.hesperides.core.presentation.io.platforms.properties.PropertySearchResultOutput;
 import org.hesperides.core.presentation.io.platforms.properties.diff.PropertiesDiffOutput;
 import org.hesperides.test.bdd.commons.TestContext;
 import org.hesperides.test.bdd.configuration.CustomRestTemplate;
@@ -332,5 +333,11 @@ public class PlatformClient {
 
     public void getAllApplicationsPasswords() {
         restTemplate.getForEntity("/applications/all_passwords", String.class);
+    }
+
+    public void searchProperties(String propertyName) {
+        restTemplate.getForEntity("/applications/search_properties?property_name={property_name}",
+                PropertySearchResultOutput[].class,
+                propertyName);
     }
 }

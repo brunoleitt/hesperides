@@ -27,6 +27,7 @@ import org.hesperides.core.domain.platforms.entities.properties.IterableValuedPr
 import org.hesperides.core.domain.platforms.queries.views.properties.IterableValuedPropertyView;
 import org.hesperides.core.infrastructure.mongo.templatecontainers.AbstractPropertyDocument;
 import org.hesperides.core.infrastructure.mongo.templatecontainers.IterablePropertyDocument;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import java.util.List;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Document
+@TypeAlias("iterable_valued_property")
 public class IterableValuedPropertyDocument extends AbstractValuedPropertyDocument {
 
     private List<IterablePropertyItemDocument> items;

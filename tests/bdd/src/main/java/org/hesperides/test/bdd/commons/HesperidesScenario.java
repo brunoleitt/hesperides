@@ -79,7 +79,7 @@ public class HesperidesScenario {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, testContext.getResponseStatusCode());
     }
 
-    protected void assertEqualsInAnyOrder(List expectedElements, List actualElements) {
+    protected void assertEqualsInAnyOrder(List<?> expectedElements, List<?> actualElements) {
         assertTrue(expectedElements.size() == actualElements.size() &&
                 expectedElements.containsAll(actualElements) && actualElements.containsAll(expectedElements));
 

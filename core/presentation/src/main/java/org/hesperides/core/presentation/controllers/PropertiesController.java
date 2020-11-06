@@ -237,8 +237,7 @@ public class PropertiesController extends AbstractController {
     public ResponseEntity<List<PropertySearchResultOutput>> searchProperties(
             Authentication authentication,
             @RequestParam(value = "property_name", required = false) String propertyName,
-            @RequestParam(value = "property_value", required = false) String propertyValue,
-            @RequestParam(value = "application_name", required = false) String applicationName) {
+            @RequestParam(value = "property_value", required = false) String propertyValue) {
 
         if (isBlank(propertyName) && isBlank(propertyValue)) {
             throw new IllegalArgumentException("Veuillez effectuer votre recherche au moins sur la valeur ou le nom d'une propriété");
@@ -246,7 +245,7 @@ public class PropertiesController extends AbstractController {
 
         User user = new User(authentication);
         List<PropertySearchResultView> propertyViews = propertiesUseCases.searchProperties(
-                propertyName, propertyValue, applicationName, user);
+                propertyName, propertyValue, user);
         List<PropertySearchResultOutput> propertyOutputs = PropertySearchResultOutput.fromViews(propertyViews);
 
         return ResponseEntity.ok(propertyOutputs);

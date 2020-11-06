@@ -127,9 +127,8 @@ public class PlatformQueries extends AxonQueries {
     }
 
     public List<PropertySearchResultView> searchProperties(String propertyName,
-                                                           String propertyValue,
-                                                           String applicationName) {
-        return querySyncList(new SearchPropertiesQuery(propertyName, propertyValue, applicationName),
+                                                           String propertyValue) {
+        return querySyncList(new SearchPropertiesQuery(propertyName, propertyValue),
                 PropertySearchResultView.class);
     }
 }

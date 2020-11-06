@@ -479,13 +479,12 @@ public class PropertiesUseCases {
 
     public List<PropertySearchResultView> searchProperties(String propertyName,
                                                            String propertyValue,
-                                                           String applicationName,
                                                            User user) {
         // Récupérer les propriétés
         // Si l'utilisateur n'est pas prod, récupérer le modèle et filtrer les propriétés de type mot de passe
 
         List<PropertySearchResultView> properties = platformQueries.searchProperties(
-                propertyName, propertyValue, applicationName);
+                propertyName, propertyValue);
 
 //        if (!user.isGlobalProd()) {
 //            List<ModulePasswordProperties> passwords = moduleQueries.findAllPasswordProperties();

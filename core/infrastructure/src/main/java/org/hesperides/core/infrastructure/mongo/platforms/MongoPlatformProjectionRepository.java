@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.hesperides.commons.SpringProfiles.FAKE_MONGO;
 import static org.hesperides.commons.SpringProfiles.MONGO;
 import static org.hesperides.core.infrastructure.mongo.Collections.PLATFORM;
@@ -451,7 +452,12 @@ public class MongoPlatformProjectionRepository implements PlatformProjectionRepo
     @Override
     @Timed
     public List<PropertySearchResultView> onSearchPropertiesQuery(SearchPropertiesQuery query) {
-        return platformRepository.searchProperties(query.getPropertyName(), query.getPropertyValue(), query.getApplicationName()).stream()
+        String anything = ".*";
+        String propertyName = isEmpty(query.getPropertyName()) ? anything : query.getPropertyName();
+        String propertyValue = isEmpty(query.getPropertyValue()) ? anything : query.getPropertyValue();
+
+        return platformRepository.searchProperties(propertyName, propertyValue)
+                .stream()
                 .map(PlatformDocument::toPropertySearchResultViews)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
